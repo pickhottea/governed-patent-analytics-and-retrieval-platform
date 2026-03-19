@@ -1,0 +1,28 @@
+{
+  "xlsx_path": "/mnt/data/rawdata_patents.xlsx",
+  "n_rows": 150,
+  "columns_repr": [
+    "'No'",
+    "'title'",
+    "'inventors'",
+    "'applicants'",
+    "'publication_number'",
+    "'grant_number '",
+    "'earliest_priority_date'",
+    "'ipc'",
+    "'cpc'",
+    "'publication_date'",
+    "'earliest_publication'",
+    "'family_id'"
+  ],
+  "publication_col": "publication_number",
+  "family_id_col": "family_id",
+  "pub_null_rows": 0,
+  "pub_unique": 150,
+  "pub_dup_rows": 0,
+  "pub_bad_format_sample": [],
+  "family_null_rows": 0,
+  "family_unique": 150,
+  "family_non_digit_sample": [],
+  "pub2fam_entries": 150
+}

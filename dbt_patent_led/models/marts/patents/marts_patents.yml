@@ -1,0 +1,105 @@
+version: 2
+
+models:
+  - name: bridge_family_ops_cluster
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+          - unique
+      - name: ops_family_cluster_id
+        tests:
+          - not_null
+
+  - name: dim_publication
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+
+
+  - name: bridge_family_publication
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+      - name: publication_number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
+      - name: member_role
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['anchor', 'expanded_member']
+
+  - name: bridge_publication_ipc
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
+      - name: ipc_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ipc')
+                field: ipc_code
+
+  - name: bm25_document
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
+
+  - name: fact_publication_applicant
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - publication_number
+              - applicant_seq
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
+      - name: applicant_seq
+        tests:
+          - not_null
+
+  - name: fact_publication_inventor
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - publication_number
+              - inventor_seq
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
+      - name: inventor_seq
+        tests:
+          - not_null

@@ -1,0 +1,37 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "en_claim": {
+          "type": "standard",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "publication_number": { "type": "keyword" },
+      "representative_publication": { "type": "keyword" },
+      "family_id": { "type": "keyword" },
+
+      "title": { "type": "text", "analyzer": "en_claim" },
+      "abstract": { "type": "text", "analyzer": "en_claim" },
+
+      "publication_date": { "type": "date" },
+      "publication_year": { "type": "integer" },
+
+      "ipc": { "type": "keyword" },
+      "cpc": { "type": "keyword" },
+      "ipc_tokens": { "type": "keyword" },
+      "cpc_tokens": { "type": "keyword" },
+
+      "has_claim1": { "type": "boolean" },
+      "claims_source": { "type": "keyword" },
+      "governance_flags": { "type": "keyword" },
+
+      "claim_1": { "type": "text", "analyzer": "en_claim" },
+      "claims_all": { "type": "text", "analyzer": "en_claim" }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# dbt build artifacts
+dbt_patent_led/logs/
+dbt_patent_led/target/
+dbt_patent_led/dbt_packages/
+
+# Local runtime/cache
+logs/
+cache/
+.tmp/
+*.tmp
+.DS_Store
+
+# Env files
+.env
+.env.*
+
+# Office lock / local scratch
+.~lock.*
+*.xlsx
+
+# Pipeline run outputs only
+artifacts/_pipeline_runs/
+
+# Local data folders
+data/
+
+# Not for first commit
+app.py
+app_ab_demo_backup.py
+fig_1_governance_pipeline_v2.png
+fig_2_controlled_embedding_flow.png
+fig_3_hybrid_semantic_layer.png
+espacenet-pocket-guide_en.pdf

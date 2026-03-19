@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: patent_analytics
+    database: patent_analytics
+    schema: silver
+    tables:
+      - name: rawdata_patents
+      - name: ops_family_members
+      - name: raw_pub_to_family_id_v2
+      - name: publication_ipc
+      - name: publication_abstract_dedup
+      - name: publication_applicant_raw
+      - name: publication_inventor_raw
