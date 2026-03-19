@@ -79,7 +79,8 @@ Core characteristics:
 ├── ui/
 ├── .gitignore
 └── PIPELINE_ENTRYPOINT.md
-```text
+```
+
 ## Key Components
 
 ### SQL warehouse
