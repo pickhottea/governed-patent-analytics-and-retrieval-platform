@@ -26,4 +26,8 @@ app_ab_demo_backup.py
 fig_1_governance_pipeline_v2.png
 fig_2_controlled_embedding_flow.png
 fig_3_hybrid_semantic_layer.png
-espacenet-pocket-guide_en.pdf
+espacenet-pocket-guide_en.pdfartifacts/chroma/
+scripts/semantic/_legacy_chunks/
+*.sqlite3
+*.bin
+SUCCESS.flag
