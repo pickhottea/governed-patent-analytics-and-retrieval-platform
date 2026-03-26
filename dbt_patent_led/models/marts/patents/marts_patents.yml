@@ -2,6 +2,7 @@ version: 2
 
 models:
   - name: bridge_family_ops_cluster
+    description: Family-to-OPS cluster bridge for governed family expansion.
     columns:
       - name: family_id
         tests:
@@ -12,14 +13,23 @@ models:
           - not_null
 
   - name: dim_publication
+    description: Canonical publication dimension.
     columns:
       - name: publication_number
         tests:
           - not_null
           - unique
 
+  - name: dim_ipc
+    description: IPC hierarchy dimension.
+    columns:
+      - name: ipc_code
+        tests:
+          - not_null
+          - unique
 
   - name: bridge_family_publication
+    description: Family-to-publication bridge.
     columns:
       - name: family_id
         tests:
@@ -39,6 +49,7 @@ models:
                 values: ['anchor', 'expanded_member']
 
   - name: bridge_publication_ipc
+    description: Publication-to-IPC bridge.
     columns:
       - name: publication_number
         tests:
@@ -55,18 +66,8 @@ models:
                 to: ref('dim_ipc')
                 field: ipc_code
 
-  - name: bm25_document
-    columns:
-      - name: publication_number
-        tests:
-          - not_null
-          - unique
-          - relationships:
-              arguments:
-                to: ref('dim_publication')
-                field: publication_number
-
   - name: fact_publication_applicant
+    description: Publication x applicant fact.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -86,6 +87,7 @@ models:
           - not_null
 
   - name: fact_publication_inventor
+    description: Publication x inventor fact.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -103,3 +105,15 @@ models:
       - name: inventor_seq
         tests:
           - not_null
+
+  - name: bm25_document
+    description: Publication-grain BM25 serving table.
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_publication')
+                field: publication_number
