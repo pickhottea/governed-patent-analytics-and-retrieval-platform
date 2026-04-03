@@ -31,3 +31,4 @@ scripts/semantic/_legacy_chunks/
 *.sqlite3
 *.bin
 SUCCESS.flag
+policies/archive/
