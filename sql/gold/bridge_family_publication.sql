@@ -3,6 +3,7 @@ Purpose:
 - Build gold.bridge_family_publication
 - Enforce a governed family-to-publication bridge
 - Prevent uncontrolled OPS-family full expansion
+- Normalize OPS-derived publication identifiers before attachment
 
 Target:
 - gold.bridge_family_publication
@@ -128,14 +129,14 @@ ops_members_resolved AS (
             LEFT(om.seed_publication_number, 2)
         ) AS member_jurisdiction_resolved
     FROM ops_members_normalized om
-)
+),
 
 expanded_candidates AS (
     SELECT
         a.family_id,
         omr.member_publication_number_resolved AS publication_number,
         CAST('expanded_member' AS VARCHAR(30)) AS member_role,
-        CAST(a.family_id AS VARCHAR(100)) AS ops_family_cluster_id,
+        CAST(bfo.ops_family_cluster_id AS VARCHAR(100)) AS ops_family_cluster_id,
         CAST(0 AS BIT) AS is_bm25_representative,
         CAST('ops_family_members' AS VARCHAR(50)) AS record_source,
         CAST('same_jurisdiction_as_anchor' AS VARCHAR(100)) AS expansion_gate_rule,

@@ -1,59 +1,149 @@
-IF NOT EXISTS (
-    SELECT 1
-    FROM sys.schemas
-    WHERE name = 'silver'
+/*
+File: sql/silver/rawdata_patents.sql
+
+Purpose:
+- parse bronze.patents_canonical_raw json payload
+- expose cleaned publication_number for downstream joins
+- preserve raw publication number for traceability
+*/
+
+CREATE OR ALTER VIEW silver.rawdata_patents AS
+WITH source_data AS (
+    SELECT
+        row_id,
+        source_file_name,
+        json_payload,
+        ingested_at
+    FROM bronze.patents_canonical_raw
+),
+parsed AS (
+    SELECT
+        src.row_id,
+        src.source_file_name,
+        src.ingested_at,
+        src.json_payload,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.family_id'),
+            JSON_VALUE(src.json_payload, '$.dataset_family_id'),
+            JSON_VALUE(src.json_payload, '$.familyId'),
+            JSON_VALUE(src.json_payload, '$.datasetFamilyId')
+        ) AS family_id,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.publication_number'),
+            JSON_VALUE(src.json_payload, '$.selected_publication'),
+            JSON_VALUE(src.json_payload, '$.seed_publication_number'),
+            JSON_VALUE(src.json_payload, '$.publicationNumber'),
+            JSON_VALUE(src.json_payload, '$.selectedPublication'),
+            JSON_VALUE(src.json_payload, '$.seedPublicationNumber')
+        ) AS publication_number_raw,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.grant_number'),
+            JSON_VALUE(src.json_payload, '$.grantNumber')
+        ) AS grant_number,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.title'),
+            JSON_VALUE(src.json_payload, '$.patent_title'),
+            JSON_VALUE(src.json_payload, '$.title_text'),
+            JSON_VALUE(src.json_payload, '$.titleText')
+        ) AS title,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.inventors'),
+            JSON_QUERY(src.json_payload, '$.inventors'),
+            JSON_VALUE(src.json_payload, '$.inventor'),
+            JSON_QUERY(src.json_payload, '$.inventor_names')
+        ) AS inventors,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.applicants'),
+            JSON_QUERY(src.json_payload, '$.applicants'),
+            JSON_VALUE(src.json_payload, '$.applicant'),
+            JSON_QUERY(src.json_payload, '$.applicant_names')
+        ) AS applicants,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.priority_date'),
+            JSON_VALUE(src.json_payload, '$.priorityDate')
+        ) AS priority_date_raw,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.application_date'),
+            JSON_VALUE(src.json_payload, '$.applicationDate')
+        ) AS application_date_raw,
+
+        COALESCE(
+            JSON_VALUE(src.json_payload, '$.publication_date'),
+            JSON_VALUE(src.json_payload, '$.publicationDate')
+        ) AS publication_date_raw
+    FROM source_data src
 )
-BEGIN
-    EXEC('CREATE SCHEMA silver');
-END
-GO
-
-DROP VIEW IF EXISTS silver.rawdata_patents;
-GO
-
-CREATE VIEW silver.rawdata_patents AS
 SELECT
-    CAST(family_id AS VARCHAR(255)) AS family_id,
-    NULLIF(LTRIM(RTRIM(publication_number)), '') AS publication_number,
-    NULLIF(LTRIM(RTRIM(grant_number)), '') AS grant_number,
-    NULLIF(LTRIM(RTRIM(title)), '') AS title,
+    p.family_id,
 
-    NULLIF(
-        LTRIM(RTRIM(
-            REPLACE(REPLACE(REPLACE(inventors, '_x000D_', ' '), CHAR(13), ' '), CHAR(10), ' ')
-        )),
-        ''
-    ) AS inventors,
+    p.publication_number_raw,
 
-    NULLIF(
-        LTRIM(RTRIM(
-            REPLACE(REPLACE(REPLACE(applicants, '_x000D_', ' '), CHAR(13), ' '), CHAR(10), ' ')
-        )),
-        ''
-    ) AS applicants,
+    UPPER(
+        REPLACE(
+            REPLACE(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                LTRIM(RTRIM(p.publication_number_raw)),
+                                CHAR(9), ''
+                            ),
+                            CHAR(10), ''
+                        ),
+                        CHAR(13), ''
+                    ),
+                    NCHAR(160), ''
+                ),
+                '.',''
+            ),
+            ' ',''
+        )
+    ) AS publication_number,
 
-    TRY_CONVERT(DATE, earliest_priority_date) AS earliest_priority_date,
+    UPPER(
+        REPLACE(
+            REPLACE(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                LTRIM(RTRIM(p.publication_number_raw)),
+                                CHAR(9), ''
+                            ),
+                            CHAR(10), ''
+                        ),
+                        CHAR(13), ''
+                    ),
+                    NCHAR(160), ''
+                ),
+                '.',''
+            ),
+            ' ',''
+        )
+    ) AS publication_number_norm,
 
-    NULLIF(
-        LTRIM(RTRIM(
-            REPLACE(REPLACE(REPLACE(ipc, '_x000D_', ' '), CHAR(13), ' '), CHAR(10), ' ')
-        )),
-        ''
-    ) AS ipc,
+    p.grant_number,
+    p.title,
+    p.inventors,
+    p.applicants,
 
-    NULLIF(
-        LTRIM(RTRIM(
-            REPLACE(REPLACE(REPLACE(cpc, '_x000D_', ' '), CHAR(13), ' '), CHAR(10), ' ')
-        )),
-        ''
-    ) AS cpc,
+    TRY_CONVERT(date, p.priority_date_raw) AS priority_date,
+    TRY_CONVERT(date, p.application_date_raw) AS application_date,
+    TRY_CONVERT(date, p.publication_date_raw) AS publication_date,
 
-    TRY_CONVERT(DATE, publication_date) AS publication_date,
-    TRY_CONVERT(DATE, earliest_publication) AS earliest_publication
-FROM bronze.rawdata_patents;
+    p.source_file_name,
+    p.ingested_at,
+    p.row_id,
+    p.json_payload
+FROM parsed p
+WHERE p.family_id IS NOT NULL
+  AND p.publication_number_raw IS NOT NULL;
 GO
-
-
-
-
-

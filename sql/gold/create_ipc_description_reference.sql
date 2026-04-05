@@ -1,0 +1,29 @@
+IF OBJECT_ID('gold.ipc_description_reference', 'U') IS NULL
+BEGIN
+    CREATE TABLE gold.ipc_description_reference (
+        ipc_code VARCHAR(50) NOT NULL PRIMARY KEY,
+        ipc_description NVARCHAR(2000) NOT NULL,
+        description_source VARCHAR(100) NOT NULL DEFAULT 'wipo_seed'
+    );
+END;
+GO
+
+MERGE gold.ipc_description_reference AS target
+USING (VALUES
+    ('F', 'MECHANICAL ENGINEERING; LIGHTING; HEATING; WEAPONS; BLASTING'),
+    ('F21', 'LIGHTING'),
+    ('F21V', 'DETAILS OF LIGHTING DEVICES, OF GENERAL APPLICATION'),
+    ('F21K', 'NON-ELECTRIC LIGHT SOURCES USING LUMINESCENCE; LIGHT SOURCES USING INCANDESCENCE; LIGHT SOURCES USING CHARGES OF COMBUSTIBLE MATERIAL; LIGHT SOURCES USING SEMICONDUCTOR DEVICES AS LIGHT-GENERATING ELEMENTS; LIGHT SOURCES NOT OTHERWISE PROVIDED FOR'),
+    ('H01L', 'SEMICONDUCTOR DEVICES; ELECTRIC SOLID STATE DEVICES NOT OTHERWISE PROVIDED FOR'),
+    ('H01L33', 'SEMICONDUCTOR DEVICES WITH AT LEAST ONE POTENTIAL-JUMP BARRIER OR SURFACE BARRIER ADAPTED FOR LIGHT EMISSION'),
+    ('F21V1/00', 'Shades'),
+    ('F21V3/00', 'Globes; Bowls; Cover glasses'),
+    ('F21V5/00', 'Refractors'),
+    ('F21V7/00', 'Reflectors')
+) AS source (ipc_code, ipc_description)
+ON target.ipc_code = source.ipc_code
+WHEN MATCHED THEN
+    UPDATE SET ipc_description = source.ipc_description
+WHEN NOT MATCHED THEN
+    INSERT (ipc_code, ipc_description) VALUES (source.ipc_code, source.ipc_description);
+GO
