@@ -32,3 +32,6 @@ scripts/semantic/_legacy_chunks/
 *.bin
 SUCCESS.flag
 policies/archive/
+
+artifacts/cache/
+artifacts/chroma/

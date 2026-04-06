@@ -1,0 +1,21 @@
+ts_utc,query_id,query_group,retrieval_system,publication_number,family_id,rank_position,score,label,reviewer,notes
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,EP3825599A1,69845166.0,1.0,59.406143,highly_relevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,US11118738B1,74251686.0,2.0,20.685947,somewhat_relevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,EP4446650A1,81787999.0,3.0,18.692896,somewhat_relevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,US2022003386A1,68033961.0,4.0,18.669838,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,US2021372574A1,74250727.0,5.0,17.41486,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,EP3832203A1,70008243.0,6.0,17.196096,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,EP4673683A1,89942571.0,7.0,16.455595,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,US2025230924A1,83902952.0,8.0,16.273647,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,EP3888886A1,70108112.0,9.0,15.2508745,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T18:30:00.257456+00:00,Q_S1,group1,bm25,WO2021224134A1,70740425.0,10.0,13.571975,irrelevant,pickhottea,manual review from Streamlit session
+2026-04-06T20:58:09.804504+00:00,Q_S2,group1,bm25,EP4354016A1,78284617.0,1.0,20.774015,highly_relevant,pickhottea,
+2026-04-06T20:58:18.735433+00:00,Q_S2,group1,bm25,EP4673683A1,89942571.0,2.0,20.469915,somewhat_relevant,pickhottea,
+2026-04-06T20:58:25.839199+00:00,Q_S2,group1,bm25,WO2021236662A1,78707537.0,3.0,19.589333,irrelevant,pickhottea,
+2026-04-06T20:58:30.651289+00:00,Q_S2,group1,bm25,EP3825599A1,69845166.0,4.0,17.281073,highly_relevant,pickhottea,
+2026-04-06T20:58:37.301260+00:00,Q_S2,group1,bm25,US2023220973A1,76958987.0,5.0,17.071398,irrelevant,pickhottea,
+2026-04-06T20:58:40.113413+00:00,Q_S2,group1,bm25,WO2021247935A1,78829950.0,6.0,16.923882,irrelevant,pickhottea,
+2026-04-06T20:58:42.621135+00:00,Q_S2,group1,bm25,WO2021261841A1,79281565.0,7.0,16.90352,irrelevant,pickhottea,
+2026-04-06T20:58:44.807386+00:00,Q_S2,group1,bm25,US2021408110A1,73700133.0,8.0,15.766315,irrelevant,pickhottea,
+2026-04-06T20:58:46.666098+00:00,Q_S2,group1,bm25,WO2021254068A1,78912022.0,9.0,14.944922,irrelevant,pickhottea,
+2026-04-06T20:58:48.569513+00:00,Q_S2,group1,bm25,US2021329762A1,78081021,10.0,14.744948,irrelevant,pickhottea,

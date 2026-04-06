@@ -1,0 +1,11 @@
+need_id,query_family,eval_layer,query_type,query_text
+G2_1,GROUP2,retrieval,KEYWORD,"LED lamp heat dissipation heat sink"
+G2_1,GROUP2,rag,ANSWERABLE,"Which retrieved patents describe LED lamp designs that improve heat dissipation using heat sink structures? Summarize the mechanism and cite the publications."
+G2_2,GROUP2,retrieval,PROBLEM,"LED lamp prone to overheating"
+G2_2,GROUP2,rag,ANSWERABLE,"What causes overheating in the retrieved LED lamp patents, and what design solutions are proposed to address it? Cite the supporting publications."
+G2_3,GROUP2,retrieval,FUNCTIONAL,"extend service life by thermal control"
+G2_3,GROUP2,rag,ANSWERABLE,"According to the retrieved patents, how does thermal control contribute to longer service life in lighting devices? Cite the evidence."
+G2_4,GROUP2,retrieval,FAILURE_MECHANISM,"thermal degradation in lighting device"
+G2_4,GROUP2,rag,ANSWERABLE,"What failure mechanisms related to thermal degradation are described in the retrieved lighting-device patents, and how do the inventions mitigate them? Cite the evidence."
+G2_5,GROUP2,retrieval,MECHANISM,"flexible substrate tilted up connecting strips abut heat dissipation column"
+G2_5,GROUP2,rag,ANSWERABLE,"Which retrieved patents describe a structure where a flexible substrate is stabilized by connecting strips against a heat dissipation column, and how does that reduce overheating risk? Cite the publications."

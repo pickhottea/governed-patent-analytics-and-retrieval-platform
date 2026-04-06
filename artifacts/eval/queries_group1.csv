@@ -1,0 +1,11 @@
+query_id,query_group,query_type,noise_level,adversarial,eval_layer,query_text
+Q_S1,group1,STRUCTURAL,0,False,retrieval,"I’m looking for a lamp design where a flexible substrate is wrapped around a central heat dissipation column, and small connecting strips are arranged to press against the outer surface of that column to stabilize the structure."
+Q_S2,group1,STRUCTURAL,0,False,retrieval,I want a lighting device where the light-emitting elements are mounted on a flexible circuit board that is physically supported by surrounding side plates and a top plate to prevent deformation.
+Q_F1,group1,FUNCTIONAL,0,False,retrieval,I am searching for a lighting system that improves thermal management so that the lamp can operate at lower temperatures and achieve a longer service life.
+Q_F2,group1,FUNCTIONAL,0,False,retrieval,I need a lamp structure designed to reduce heat accumulation and maintain stable performance over extended operating periods.
+Q_C1,group1,CAUSAL,0,False,retrieval,"I’m trying to find a lamp where tilting or warping of a flexible substrate leads to overheating, and the invention proposes a structural solution to prevent that chain of problems."
+Q_C2,group1,CAUSAL,0,False,retrieval,"I’m interested in a lighting device where mechanical deformation of the circuit board causes thermal buildup, which then shortens the product’s lifetime."
+Q_N1,group1,NOISE,2,False,retrieval,"In the context of smart urban lighting and adaptive architectural illumination systems, I’m particularly interested in decorative and modular lamp solutions. However, my real concern is a design that prevents flexible substrate deformation from causing overheating and reduced lifetime."
+Q_N2,group1,NOISE,2,False,retrieval,"While considering compatibility with smart home ecosystems and aesthetic customization of lighting fixtures, I am mainly looking for a structural solution that stabilizes a flexible circuit board to avoid thermal issues."
+Q_R1,group1,REVERSAL,0,True,retrieval,I am looking for a lamp design where deformation of a flexible substrate does not cause overheating and does not reduce the service life of the device.
+Q_R2,group1,REVERSAL,0,True,retrieval,I’m interested in a lighting structure that intentionally allows some movement or bending of the circuit board without negatively affecting thermal performance.
