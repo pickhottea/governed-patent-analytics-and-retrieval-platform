@@ -35,3 +35,5 @@ policies/archive/
 
 artifacts/cache/
 artifacts/chroma/
+scripts/debug/
+ui/archive/
