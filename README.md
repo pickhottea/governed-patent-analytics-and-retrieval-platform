@@ -2,238 +2,258 @@
 
 SQL-first patent warehouse and retrieval platform built with SQL Server, dbt, Elasticsearch, and Power BI-facing marts.
 
+---
+
 ## Overview
 
-This repository demonstrates a governed data platform for patent analytics and retrieval.
+This repository demonstrates a **governed, extensible patent data platform**, not a one-off analysis.
 
 The platform is designed around three goals:
 
 1. Build a reliable SQL Server warehouse for patent data using bronze, silver, and gold layers.
 2. Model analytics-ready datasets in dbt for reporting and downstream BI use.
-3. Validate a retrieval-serving path using Elasticsearch BM25 over publication-level patent text.
+3. Provide a governed retrieval-serving layer using Elasticsearch BM25 over publication-level patent text.
 
-This project is intentionally platform-oriented rather than notebook-oriented. The emphasis is on warehouse structure, data contracts, governed modeling, testability, and reproducible serving flows.
+This project emphasizes **platform design, data contracts, lifecycle thinking, and reproducible pipelines**, rather than ad hoc analysis.
 
-## Platform Scope
+---
 
-Current platform scope includes:
+## Platform Positioning
 
-- SQL Server warehouse foundation
-- bronze / silver / gold warehouse modeling
-- dbt staging and marts
-- applicant, inventor, IPC, and publication analytics models
-- Power BI-facing marts
-- Elasticsearch BM25 serving validation
-- architecture contracts and governance policies
+This is **not a dataset showcase**.
+
+The current scope is intentionally limited to ~150 patent families, used as a **controlled pilot dataset** to validate:
+
+- family-level modeling
+- deduplication logic
+- canonical key design
+- retrieval corpus construction
+- analytics + search consistency
+- governance and lifecycle policies
+
+> The value of this project is not in dataset size, but in establishing a **scalable, maintainable, and governed patent platform foundation**.
+
+---
 
 ## Architecture Summary
 
 The platform is organized into two connected layers:
 
 ### 1. Analytics warehouse layer
-This layer supports reporting, dimensional modeling, and BI consumption.
 
-Core characteristics:
+Supports reporting, modeling, and BI.
 
-- SQL Server as warehouse engine
-- layered modeling with bronze, silver, and gold
-- dbt for staging, marts, and tests
-- publication, family, IPC, applicant, and inventor analytics
-- Power BI-facing marts for dashboard consumption
+- SQL Server warehouse (bronze / silver / gold)
+- dbt staging and marts
+- publication, family, IPC, applicant, inventor models
+- Power BI-facing marts
+- governed dimensional modeling
+
+---
 
 ### 2. Retrieval serving layer
-This layer supports publication-level search serving.
 
-Core characteristics:
+Supports publication-level search.
 
-- BM25-oriented document preparation
-- Elasticsearch index create / load / query flow
-- publication-level retrieval validation
-- governed distinction between analytics truth and serving corpus
+- BM25 document preparation
+- Elasticsearch index / load / query
+- governed separation from analytics layer
+- validated retrieval behavior
+
+---
+
+## BM25 Retrieval Layer
+
+BM25 retrieval pipeline has been successfully implemented end-to-end, with a governed publication universe of 150 anchor publications, fallback-safe corpus construction, and Elasticsearch-based ranking validated.
+
+### Key Design Decisions
+
+- **Search universe = anchor publications (150), not artifact subset (149)**
+- **Fallback-safe corpus**: title-only documents allowed when abstract missing
+- **Decoupled architecture**: retrieval is not constrained by upstream artifact completeness
+- **BM25 validated via Elasticsearch ranking behavior**
+
+### Current State
+
+- Source table: `gold.bm25_document`
+- Index: `patent_bm25_v1`
+- Documents indexed: 150
+- Query path validated through Elasticsearch `_search`
+- Streamlit review workflow enabled for benchmark query evaluation
+- Initial benchmark judgments completed for `Q_S1` and `Q_S2`
+
+### Streamlit Review and Evaluation UI
+
+A Streamlit-based review interface is included to support benchmark-driven retrieval evaluation and evidence capture.
+
+Current UI capabilities include:
+
+- benchmark query selection
+- BM25 result inspection
+- human relevance judgment capture
+- retrieval evaluation
+- trace evidence inspection
+- RAG review logging scaffold
+
+This UI is designed as an evidence capture interface rather than a demo-only layer. It supports the collection of:
+
+- benchmark queries
+- human judgments
+- query execution logs
+- retrieval result logs
+- traceable evaluation outputs
+
+### Streamlit UI Screenshots
+
+#### BM25 Search
+![BM25 Search UI](docs/screenshots/streamlit_bm25_search.png)
+
+#### Judge Results
+![Judge Results UI](docs/screenshots/streamlit_judge_results.png)
+
+#### Retrieval Evaluation
+![Retrieval Evaluation UI](docs/screenshots/streamlit_retrieval_eval.png)
+
+#### Trace Evidence
+![Trace Evidence UI](docs/screenshots/streamlit_trace_evidence.png)
+
+---
+
+## Core Modeling Decisions
+
+### Canonical keys
+
+- `family_id` → family-level identity
+- `publication_number` → publication-level identity
+
+These are **governed identifiers** and should not be replaced.
+
+---
+
+### Family-publication alignment
+
+Corrected to:
+
+`family_id → bridge_family_ops_cluster → ops_family_members`
+
+instead of broken seed-publication matching.
+
+---
+
+### Publication semantics
+
+`dim_publication` is **publication-level**, not enforcing strict 1:1 family mapping.
+
+---
+
+## Data Lifecycle Policy
+
+This platform treats data as **stateful assets**, not static tables.
+
+### Lifecycle stages
+
+1. Ingested (raw)
+2. Normalized (structured)
+3. Resolved (family mapping / dedup)
+4. Curated (gold / retrieval-ready)
+5. Served (analytics + search)
+6. Reviewed (human / evaluation)
+7. Monitored (refresh / change tracking)
+8. Archived / pruned
+
+---
+
+## Retention Policy
+
+Retention follows **function, not patent term**.
+
+| Layer | Retention logic |
+|------|----------------|
+| Registry (family/publication) | long-term |
+| Governance (decisions, mapping) | medium-long |
+| Raw / intermediate | short-term (reproducible) |
+| Logs / telemetry | short-term |
+
+Principle:
+
+> Keep what is required for traceability, governance, and serving.  
+> Discard what can be reconstructed.
+
+---
+
+## Data Governance
+
+This project includes foundational governance thinking:
+
+- canonical identifiers
+- controlled modeling layers
+- lineage-aware transformations
+- retrieval vs analytics separation
+- reproducible pipelines
+- explicit lifecycle boundaries
+
+---
 
 ## Repository Structure
 
 ```text
 .
 ├── artifacts/
-│   └── audit/
+│   ├── audit/
+│   └── eval/
 ├── dbt_patent_led/
-│   ├── models/
-│   │   ├── staging/
-│   │   └── marts/
-│   ├── dbt_project.yml
-│   └── packages.yml
 ├── docs/
-│   └── architecture/
-├── policies/
-├── scripts/
-│   └── ingest/
+│   ├── architecture/
+│   └── screenshots/
 ├── search/
 │   └── elasticsearch/
 ├── sql/
 │   ├── bronze/
 │   ├── silver/
 │   ├── gold/
-│   └── archive/
 ├── tests/
 ├── ui/
-├── .gitignore
 └── PIPELINE_ENTRYPOINT.md
+
 ```
-
-## Key Components
-
-### SQL warehouse
-
-The `sql/` directory contains the warehouse SQL used to define and load the bronze, silver, and gold layers.
-
-Examples include:
-
-- raw patent ingestion structures
-- family expansion logic
-- IPC bridges and dimensions
-- applicant and inventor facts
-- BM25 preparation tables
-
-### dbt project
-
-The `dbt_patent_led/` directory contains dbt models for:
-
-- staging models over warehouse sources
-- analytics marts
-- applicant / inventor facts
-- IPC and publication dimensions
-- Power BI-facing marts
-- dbt tests for integrity and modeling confidence
-
-### Elasticsearch serving
-
-The `search/elasticsearch/` directory contains the serving validation flow:
-
-- create index
-- load BM25 documents
-- query and inspect retrieval results
-
-## Current Modeling Decisions
-
-### Canonical keys
-
-The current platform keeps these keys fixed:
-
-- `family_id` as the canonical family key
-- `publication_number` as the canonical publication key
-
-These keys should not be replaced casually, because they are part of the architecture and traceability contracts.
-
-### Family-publication alignment
-
-A critical modeling correction was made so that family expansion is attached through family-level OPS mapping rather than seed-publication exact matching.
-
-This means the valid path is:
-
-`family_id -> bridge_family_ops_cluster -> ops_family_members`
-
-and not the older broken rule based on direct seed-publication matching.
-
-### Publication dimension semantics
-
-`dim_publication` is treated as publication-only, not as a strict family-publication uniqueness contract. This is important because publication-family relationships may reflect broader family interpretation behavior and should not be oversimplified.
-
-## Data Quality and Testing
-
-This platform uses both SQL validation checks and dbt tests.
-
-Current test coverage includes:
-
-- `unique`
-- `not_null`
-- `accepted_values`
-- `relationships`
-
-Representative tested entities include:
-
-- family OPS bridge
-- family-publication bridge
-- publication IPC bridge
-- BM25 document publication key
-- applicant fact keys
-- inventor fact keys
-
-## Power BI-Facing Marts
-
-The current dbt project includes marts designed for BI-facing consumption, including:
-
-- family publication coverage
-- IPC distribution
-- applicant organization
-- inventor
-- BM25 publication metadata
-
-These marts are intended to provide cleaner reporting surfaces than pointing BI tools directly at lower-level bridge or fact tables.
-
-## Elasticsearch Validation
-
-The retrieval-serving flow has been validated end to end:
-
-- index creation
-- BM25 document load
-- query execution
-
-This confirms that the platform is not only an analytics warehouse, but also supports a governed retrieval-serving path.
-
-## Governance Positioning
-
-This repository is meant to show platform and governance thinking, not only model building.
-
-The project emphasizes:
-
-- controlled warehouse layers
-- architecture contracts
-- naming and traceability discipline
-- governed distinction between analytics truth and retrieval serving
-- reproducible modeling and validation steps
-
-## Tech Stack
-
-- SQL Server
-- T-SQL
-- dbt
-- Elasticsearch
-- Python
-- Power BI
-
 ## What This Repository Demonstrates
-
-This repository is intended as a portfolio-grade example of:
 
 - analytics engineering
 - data platform design
-- warehouse modeling
-- governed semantic / retrieval architecture
-- SQL-first implementation discipline
-- BI-facing mart design
-- search-serving validation
+- governed warehouse modeling
+- retrieval-serving architecture (BM25)
+- lifecycle-aware data management
+- BI-ready mart design
+- separation of concerns (analytics vs retrieval)
 
-## Status
+---
 
-Current status:
+## Current Status
 
 - warehouse foundation established
 - dbt marts and tests implemented
-- Power BI-facing marts created
-- Elasticsearch BM25 serving validated
-- architecture and governance documentation organized
+- Power BI marts defined
+- BM25 retrieval pipeline validated (150 publications)
+- Streamlit-based review, trace, and evaluation workflow implemented
+- governance and architecture documented
 
-## Next Possible Extensions
+---
 
-Potential future extensions include:
+## Next Extensions
 
-- expanding README-level execution instructions
-- adding dbt docs generation and model documentation
-- adding Power BI screenshots or dashboard documentation
-- integrating more explicit release/run metadata
-- further narrowing or modularizing ingestion and serving scripts
+- semantic retrieval layer (embedding-based)
+- hybrid retrieval (BM25 + semantic)
+- citation-grounded RAG layer
+- expansion of benchmark query coverage
+- larger-scale human relevance judgments
+- richer retrieval evaluation (Precision@k / nDCG by query type)
+---
 
 ## Author
 
-Built by pickhottea as a governed patent analytics and retrieval platform project focused on data governance, warehouse design, analytics engineering, and retrieval-serving architecture.
+Built by pickhottea as a **governed patent analytics and retrieval platform**, focusing on:
+
+- data governance
+- warehouse architecture
+- analytics engineering
+- retrieval system design
