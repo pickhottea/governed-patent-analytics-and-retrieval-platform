@@ -1,0 +1,155 @@
+version: 2
+
+models:
+  - name: bm25_document
+
+  - name: bridge_family_ops_cluster
+
+  - name: bridge_family_publication
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: publication_number
+        tests:
+          - not_null
+
+      - name: member_role
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['anchor', 'expanded_member']
+
+  - name: bridge_publication_ipc
+
+  - name: dim_ipc
+
+  - name: dim_publication
+
+  - name: fact_publication_applicant
+
+  - name: fact_publication_inventor
+
+  - name: mart_applicant_organization
+
+  - name: mart_bm25_publication_metadata
+
+  - name: mart_family_publication_coverage
+
+  - name: mart_inventor
+  
+  - name: mart_publication_inventor_expanded
+    description: "Expanded publication-level inventor mart built from family-publication bridge and fact_publication_inventor."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: publication_number
+        tests:
+          - not_null
+
+      - name: inventor_name
+        tests:
+          - not_null
+
+  - name: mart_family_inventor_summary
+    description: "Family-level inventor summary derived from expanded publication inventor mart."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: inventor_name
+        tests:
+          - not_null
+
+  - name: mart_ipc_distribution
+  
+  - name: mart_applicant_organization
+    description: "Organization-level applicant rollup mart derived from family applicant summary and applicant organization mapping seed."
+    columns:
+      - name: organization_group
+        tests:
+          - not_null
+          - unique
+
+      - name: distinct_family_count
+        tests:
+          - not_null
+
+      - name: applicant_variant_count
+        tests:
+          - not_null
+
+      - name: distinct_country_code_count
+        tests:
+          - not_null
+
+      - name: organization_confidence_status
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - high
+                  - medium
+                  - low
+                  - has_unmapped
+  
+  - name: mart_publication_country_expanded
+    description: "Expanded publication-level country mart built from family-publication bridge."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+
+      - name: authority_code
+        tests:
+          - not_null
+
+  - name: mart_family_country_distribution
+    description: "Family-level country distribution derived from expanded publication country mart."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: country_code
+        tests:
+          - not_null
+
+      - name: distinct_publication_count
+        tests:
+          - not_null
+
+  - name: mart_publication_applicant_expanded
+    description: "Expanded publication-level applicant mart built from family-publication bridge and fact_publication_applicant."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: publication_number
+        tests:
+          - not_null
+
+      - name: applicant_name
+        tests:
+          - not_null
+
+  - name: mart_family_applicant_summary
+    description: "Family-level applicant summary derived from expanded publication applicant mart."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: applicant_name
+        tests:
+          - not_null

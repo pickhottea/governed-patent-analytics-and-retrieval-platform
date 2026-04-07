@@ -1,0 +1,15 @@
+authority_code,country_code,country_name,region_name,is_pragmatic_fill
+WO,WO,WIPO / PCT,International,1
+EP,EP,European Patent Office,Europe,1
+US,US,United States,North America,0
+CN,CN,China,Asia,0
+JP,JP,Japan,Asia,0
+KR,KR,South Korea,Asia,0
+TW,TW,Taiwan,Asia,0
+DE,DE,Germany,Europe,0
+FR,FR,France,Europe,0
+GB,GB,United Kingdom,Europe,0
+CA,CA,Canada,North America,0
+AU,AU,Australia,Oceania,0
+IN,IN,India,Asia,0
+BR,BR,Brazil,South America,0

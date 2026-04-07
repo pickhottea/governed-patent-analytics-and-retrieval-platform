@@ -1,0 +1,19 @@
+applicant_name,organization_group,mapping_confidence,mapping_rule,candidate_group,notes
+SIGNIFY HOLDING BV,Signify,high,official_brand_name,,Keep separate from Lumileds.
+SUZHOU OPPLE LIGHTING CO LTD,OPPLE,high,brand_legal_variant,,Grouped with OPPLE LIGHTING CO LTD.
+OPPLE LIGHTING CO LTD,OPPLE,high,brand_legal_variant,,Grouped with SUZHOU OPPLE LIGHTING CO LTD.
+KOITO MFG CO LTD,KOITO,high,self_group,,
+XIAMEN LEEDARSON LIGHTING CO LTD,LEEDARSON,high,official_rename,,Leedarson official rename / group rollup.
+SAMSUNG DISPLAY CO LTD,Samsung,high,corporate_family,,Group with SAMSUNG ELECTRONICS CO LTD.
+OSRAM OPTO SEMICONDUCTORS GMBH,OSRAM,high,self_group,,
+SHARP KK,Sharp,high,self_group,,
+XIAMEN ECO LIGHTING CO LTD,XIAMEN ECO LIGHTING CO LTD,low,legal_entity_only,LEEDARSON?,Do not auto-merge; review manually.
+SAMSUNG ELECTRONICS CO LTD,Samsung,high,corporate_family,,Group with SAMSUNG DISPLAY CO LTD.
+NICHIA CORP,Nichia,high,self_group,,
+BOE TECHNOLOGY GROUP CO LTD,BOE,high,corporate_family,,Roll up with BEIJING BOE OPTOELECTRONICS TECH CO LTD.
+LUMILEDS LLC,Lumileds,high,self_group,,Keep separate from Signify.
+NITTO DENKO CORP,Nitto Denko,high,self_group,,
+FUJIFILM CORP,FUJIFILM,high,self_group,,
+SUMITOMO CHEMICAL CO,Sumitomo Chemical,high,self_group,,
+SEMICONDUCTOR ENERGY LAB,Semiconductor Energy Laboratory,high,self_group,,
+BEIJING BOE OPTOELECTRONICS TECH CO LTD,BOE,medium,corporate_family_inference,,"Reasonable BOE rollup, but exact legal-entity mapping can be reviewed later."

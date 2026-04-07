@@ -1,0 +1,114 @@
+version: 2
+
+models:
+  - name: stg_rawdata_patents
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+
+  - name: stg_raw_pub_to_family_id_v2
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+      - name: family_id
+        tests:
+          - not_null
+
+  - name: stg_publication_ipc
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+
+  - name: stg_publication_applicant_raw
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+      - name: applicant_seq
+        tests:
+          - not_null
+
+  - name: stg_publication_inventor_raw
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+      - name: inventor_seq
+        tests:
+          - not_null
+
+  - name: stg_ops_family_members
+    columns:
+      - name: ops_family_cluster_id
+        tests:
+          - not_null
+
+  - name: stg_publication_dates
+    description: "Publication-grain normalized date helper built from stg_rawdata_patents actual available columns."
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: grant_number
+
+      - name: priority_date
+
+      - name: application_date
+
+      - name: publication_date
+
+      - name: date_order_flag
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - ok
+                  - priority_after_publication
+                  - application_after_publication
+
+      - name: date_quality_status
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - ok
+                  - missing_pub_date
+                  - missing_pub_date_grant_side
+                  - invalid_order
+  - name: dim_country
+    description: "Minimal authority/country lookup dimension for landscape analysis."
+    columns:
+      - name: authority_code
+        tests:
+          - not_null
+          - unique
+
+      - name: country_code
+        tests:
+          - not_null
+
+      - name: is_pragmatic_fill
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+  - name: stg_publication_country
+    description: "Publication-grain authority/country helper derived from publication number prefix."
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+
+      - name: authority_code
+        tests:
+          - not_null
