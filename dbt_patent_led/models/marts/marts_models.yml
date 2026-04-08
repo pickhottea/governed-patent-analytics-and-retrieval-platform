@@ -1,135 +1,304 @@
 version: 2
 
 models:
-  - name: bm25_document
-
-  - name: bridge_family_ops_cluster
-
-  - name: bridge_family_publication
+  - name: taxonomy_symbol
+    description: "Canonical IPC/CPC taxonomy symbol registry built from official scheme files. 1 row = 1 scheme x 1 version_tag x 1 symbol_canonical."
     columns:
-      - name: family_id
+      - name: scheme
+        description: "Classification scheme, e.g. IPC or CPC."
         tests:
           - not_null
-
-      - name: publication_number
-        tests:
-          - not_null
-
-      - name: member_role
-        tests:
           - accepted_values:
               arguments:
-                values: ['anchor', 'expanded_member']
+                values: ['IPC', 'CPC']
 
-  - name: bridge_publication_ipc
-
-  - name: dim_ipc
-
-  - name: dim_publication
-
-  - name: fact_publication_applicant
-
-  - name: fact_publication_inventor
-
-  - name: mart_applicant_organization
-
-  - name: mart_bm25_publication_metadata
-
-  - name: mart_family_publication_coverage
-
-  - name: mart_inventor
-  
-  - name: mart_publication_inventor_expanded
-    description: "Expanded publication-level inventor mart built from family-publication bridge and fact_publication_inventor."
-    columns:
-      - name: family_id
+      - name: version_tag
+        description: "Official taxonomy release version, e.g. 2026.01."
         tests:
           - not_null
 
-      - name: publication_number
+      - name: symbol_canonical
+        description: "Canonical normalized symbol used as join key."
         tests:
           - not_null
 
-      - name: inventor_name
+      - name: symbol_display
+        description: "Display-ready symbol with readable formatting."
         tests:
           - not_null
 
-  - name: mart_family_inventor_summary
-    description: "Family-level inventor summary derived from expanded publication inventor mart."
-    columns:
-      - name: family_id
+      - name: symbol_level
+        description: "Hierarchy level of the symbol."
         tests:
           - not_null
-
-      - name: inventor_name
-        tests:
-          - not_null
-
-  - name: mart_ipc_distribution
-  
-  - name: mart_applicant_organization
-    description: "Organization-level applicant rollup mart derived from family applicant summary and applicant organization mapping seed."
-    columns:
-      - name: organization_group
-        tests:
-          - not_null
-          - unique
-
-      - name: distinct_family_count
-        tests:
-          - not_null
-
-      - name: applicant_variant_count
-        tests:
-          - not_null
-
-      - name: distinct_country_code_count
-        tests:
-          - not_null
-
-      - name: organization_confidence_status
-        tests:
           - accepted_values:
               arguments:
                 values:
-                  - high
-                  - medium
-                  - low
-                  - has_unmapped
-  
-  - name: mart_publication_country_expanded
-    description: "Expanded publication-level country mart built from family-publication bridge."
+                  - section
+                  - class
+                  - subclass
+                  - main_group
+                  - subgroup
+
+      - name: parent_symbol_canonical
+        description: "Immediate parent symbol in the same scheme/version hierarchy."
+
+      - name: title_en
+        description: "English title from official taxonomy files."
+
+      - name: definition_exists_flag
+        description: "Whether an official definition exists for the symbol."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - scheme
+              - version_tag
+              - symbol_canonical
+
+  - name: taxonomy_definition
+    description: "Flattened IPC/CPC taxonomy definition content built from official definition files. 1 row = 1 scheme x 1 version_tag x 1 symbol_canonical."
     columns:
-      - name: family_id
+      - name: scheme
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IPC', 'CPC']
+
+      - name: version_tag
         tests:
           - not_null
 
+      - name: symbol_canonical
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('taxonomy_symbol')
+                field: symbol_canonical
+
+      - name: definition_title
+        description: "Official definition title text."
+
+      - name: definition_statement_text
+        description: "Flattened definition statement section."
+
+      - name: relationship_text
+        description: "Flattened relationship section."
+
+      - name: references_text
+        description: "Flattened references section."
+
+      - name: special_rules_text
+        description: "Flattened special rules section."
+
+      - name: glossary_text
+        description: "Flattened glossary section."
+
+      - name: synonyms_keywords_text
+        description: "Flattened synonyms / keywords section."
+
+      - name: date_revised
+        description: "Revision marker from the official definition file where available."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - scheme
+              - version_tag
+              - symbol_canonical
+
+  - name: taxonomy_validity
+    description: "Validity intervals for taxonomy symbols. 1 row = 1 scheme x 1 symbol_canonical x 1 validity interval."
+    columns:
+      - name: scheme
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IPC', 'CPC']
+
+      - name: symbol_canonical
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('taxonomy_symbol')
+                field: symbol_canonical
+
+      - name: valid_from_date
+        description: "Effective start date for the symbol validity interval."
+
+      - name: valid_to_date
+        description: "Effective end date for the symbol validity interval. Null means currently valid."
+
+      - name: is_valid_current_flag
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+      - name: version_tag
+        description: "Source release version used to build the validity record."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - scheme
+              - symbol_canonical
+              - valid_from_date
+
+  - name: taxonomy_scope_expanded
+    description: "Expanded project scope built from seed scope roots plus official taxonomy hierarchy. 1 row = 1 scope_name x 1 root_symbol_seed x 1 expanded_symbol_canonical."
+    columns:
+      - name: scope_name
+        tests:
+          - not_null
+
+      - name: scheme
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IPC', 'CPC']
+
+      - name: root_symbol_seed
+        description: "Seed root symbol provided by project scope control."
+        tests:
+          - not_null
+
+      - name: expanded_symbol_canonical
+        description: "Expanded symbol included in the scope."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('taxonomy_symbol')
+                field: symbol_canonical
+
+      - name: relation_type
+        description: "How the expanded symbol relates to the root."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - self
+                  - descendant
+                  - ancestor
+
+      - name: depth_from_root
+        description: "Hierarchy distance from root_symbol_seed to expanded_symbol_canonical."
+        tests:
+          - not_null
+
+      - name: priority_tier
+        description: "Project priority tier carried from the seed root."
+        tests:
+          - not_null
+
+      - name: domain_bucket
+        description: "Project-facing grouping bucket carried from the seed root."
+        tests:
+          - not_null
+
+      - name: include_flag
+        description: "Whether the expanded symbol is active in the current scope."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - scope_name
+              - scheme
+              - root_symbol_seed
+              - expanded_symbol_canonical
+
+  - name: bridge_publication_ipc
+    description: "Normalized publication-to-IPC bridge used by downstream IPC marts."
+    columns:
       - name: publication_number
+        description: "Cleaned canonical publication number used as the publication-side join key."
+        tests:
+          - not_null
+
+      - name: ipc_code
+        description: "Normalized IPC token intended to join to dim_ipc.ipc_code."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ipc')
+                field: ipc_code
+
+  - name: dim_ipc
+    description: "Canonical IPC dimension. 1 row = 1 ipc_code."
+    columns:
+      - name: ipc_code
+        description: "Canonical IPC code."
         tests:
           - not_null
           - unique
 
-      - name: authority_code
-        tests:
-          - not_null
+      - name: ipc_section
+        description: "IPC section component."
 
-  - name: mart_family_country_distribution
-    description: "Family-level country distribution derived from expanded publication country mart."
+      - name: ipc_class
+        description: "IPC class component."
+
+      - name: ipc_subclass
+        description: "IPC subclass component."
+
+      - name: ipc_group
+        description: "IPC main-group component."
+
+      - name: ipc_subgroup
+        description: "IPC subgroup component."
+
+  - name: v_ipc_taxonomy_lookup
+    description: "Serving lookup view for IPC explanation / popup / dashboard."
     columns:
-      - name: family_id
+      - name: ipc_code
+        description: "Canonical IPC code used for lookup and join to dim_ipc."
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ipc')
+                field: ipc_code
 
-      - name: country_code
-        tests:
-          - not_null
+      - name: ipc_level
+        description: "Hierarchy level of the IPC code."
 
-      - name: distinct_publication_count
-        tests:
-          - not_null
+      - name: parent_ipc_code
+        description: "Parent IPC code used for breadcrumb / tree navigation."
 
-  - name: mart_publication_applicant_expanded
-    description: "Expanded publication-level applicant mart built from family-publication bridge and fact_publication_applicant."
+      - name: governance_role
+        description: "Project-facing role of this taxonomy node."
+
+      - name: is_current
+        description: "Whether the code is treated as current in the lookup layer."
+
+      - name: description
+        description: "Human-readable IPC explanation / description."
+
+  - name: mart_publication_ipc_expanded
+    description: "1 row = 1 family_id x 1 publication_number x 1 ipc_code"
     columns:
       - name: family_id
         tests:
@@ -138,18 +307,181 @@ models:
       - name: publication_number
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('bridge_family_publication')
+                field: publication_number
 
-      - name: applicant_name
+      - name: ipc_code
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ipc')
+                field: ipc_code
 
-  - name: mart_family_applicant_summary
-    description: "Family-level applicant summary derived from expanded publication applicant mart."
+      - name: ipc_section
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_class
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_subclass
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_group
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_subgroup
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - family_id
+              - publication_number
+              - ipc_code
+
+  - name: mart_family_ipc_distribution
+    description: "1 row = 1 family_id x 1 ipc_code"
     columns:
       - name: family_id
         tests:
           - not_null
 
-      - name: applicant_name
+      - name: ipc_code
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_ipc')
+                field: ipc_code
+
+      - name: ipc_section
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_class
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_subclass
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_group
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: ipc_subgroup
+        description: "Optional denormalized taxonomy attribute from dim_ipc."
+
+      - name: publication_count_with_ipc
+        description: "Optional metric: number of distinct publications within the family carrying the IPC code."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - family_id
+              - ipc_code
+
+  - name: dim_cpc
+    description: "Canonical CPC dimension. 1 row = 1 cpc_code."
+    columns:
+      - name: cpc_code
+        description: "Canonical CPC code."
+        tests:
+          - not_null
+          - unique
+
+      - name: cpc_section
+        description: "CPC section component."
+
+      - name: cpc_class
+        description: "CPC class component."
+
+      - name: cpc_subclass
+        description: "CPC subclass component."
+
+      - name: cpc_group
+        description: "CPC main-group component."
+
+      - name: cpc_subgroup
+        description: "CPC subgroup component."
+
+      - name: version_tag
+        description: "Official CPC release version, e.g. 2026.01."
+        tests:
+          - not_null
+
+      - name: source_file
+        description: "Raw CPC source file used to derive the row."
+
+  - name: cpc_validity
+    description: "CPC validity relation built from official CPC validity source."
+    columns:
+      - name: cpc_code
+        description: "Canonical CPC code."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_cpc')
+                field: cpc_code
+
+      - name: valid_from_date
+        description: "Official validity start date for the CPC code."
+
+      - name: valid_to_date
+        description: "Official validity end date for the CPC code. Null means currently valid."
+
+      - name: is_current
+        description: "Derived current-validity flag."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+      - name: version_tag
+        description: "Official CPC release version, e.g. 2026.01."
+        tests:
+          - not_null
+
+      - name: source_file
+        description: "Raw CPC validity source file."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cpc_code
+              - valid_from_date
+
+  - name: v_cpc_taxonomy_lookup
+    description: "Serving lookup view for CPC explanation / popup / dashboard."
+    columns:
+      - name: cpc_code
+        description: "Canonical CPC code."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_cpc')
+                field: cpc_code
+
+      - name: cpc_level
+        description: "Hierarchy level of the CPC code."
+
+      - name: parent_cpc_code
+        description: "Parent CPC code used for breadcrumb / tree navigation."
+
+      - name: governance_role
+        description: "Project-facing role of this taxonomy node."
+
+      - name: is_current
+        description: "Whether the CPC code is currently valid in serving lookup."
+
+      - name: description
+        description: "Human-readable CPC explanation / description."
+
+      - name: version_tag
+        description: "Official CPC release version, e.g. 2026.01."
