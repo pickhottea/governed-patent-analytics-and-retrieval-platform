@@ -1,6 +1,61 @@
+
 version: 2
 
 models:
+
+
+  - name: stg_ipc_title_list
+    description: "Normalized IPC title seed staged from official IPC title list text files."
+    columns:
+      - name: ipc_code
+        description: "Normalized IPC symbol from official IPC title list."
+        tests:
+          - not_null
+
+      - name: hierarchy_level_raw
+        description: "Raw hierarchy level value parsed from IPC title list source."
+
+      - name: title_text
+        description: "Official IPC title text from title list."
+        tests:
+          - not_null
+
+      - name: source_file
+        description: "Original IPC title list source file name."
+
+  - name: stg_cpc_title_list
+    description: "Normalized CPC title seed staged from official CPC title list text files."
+    columns:
+      - name: cpc_code
+        description: "Normalized CPC symbol from official title list."
+        tests:
+          - not_null
+
+      - name: hierarchy_level_raw
+        description: "Raw hierarchy level value parsed from CPC title list source."
+
+      - name: title_text
+        description: "Official CPC title text from title list."
+        tests:
+          - not_null
+
+      - name: source_file
+        description: "Original CPC title list source file name."
+
+  - name: stg_cpc_validity
+    description: "Normalized CPC validity seed staged from official CPC validity file."
+    columns:
+      - name: cpc_code
+        description: "Normalized CPC symbol from official validity file."
+        tests:
+          - not_null
+
+      - name: valid_from_date
+        description: "Date from which the CPC symbol is valid."
+
+      - name: valid_to_date
+        description: "Date until which the CPC symbol remains valid, if any."
+
   - name: stg_rawdata_patents
     columns:
       - name: publication_number

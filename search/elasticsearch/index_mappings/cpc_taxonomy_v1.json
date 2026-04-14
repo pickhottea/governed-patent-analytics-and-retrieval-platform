@@ -1,0 +1,86 @@
+PUT cpc_taxonomy_v1
+{
+  "settings": {
+    "analysis": {
+      "char_filter": {
+        "code_strip_symbols": {
+          "type": "pattern_replace",
+          "pattern": "[\\s\\-\\./]",
+          "replacement": ""
+        }
+      },
+      "normalizer": {
+        "code_keyword_normalizer": {
+          "type": "custom",
+          "filter": ["lowercase", "asciifolding"]
+        }
+      },
+      "analyzer": {
+        "code_text_analyzer": {
+          "type": "custom",
+          "char_filter": ["code_strip_symbols"],
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "asciifolding"]
+        },
+        "code_prefix_analyzer": {
+          "type": "custom",
+          "char_filter": ["code_strip_symbols"],
+          "tokenizer": "keyword",
+          "filter": ["lowercase", "asciifolding", "edge_ngram_2_20"]
+        }
+      },
+      "filter": {
+        "edge_ngram_2_20": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "cpc_code": {
+        "type": "keyword",
+        "normalizer": "code_keyword_normalizer",
+        "fields": {
+          "search": {
+            "type": "text",
+            "analyzer": "code_text_analyzer"
+          },
+          "prefix": {
+            "type": "text",
+            "analyzer": "code_prefix_analyzer",
+            "search_analyzer": "code_text_analyzer"
+          }
+        }
+      },
+      "cpc_code_display": {
+        "type": "text",
+        "analyzer": "code_text_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "normalizer": "code_keyword_normalizer"
+          }
+        }
+      },
+      "cpc_level": {
+        "type": "keyword"
+      },
+      "parent_cpc_code": {
+        "type": "keyword",
+        "normalizer": "code_keyword_normalizer"
+      },
+      "governance_role": {
+        "type": "keyword"
+      },
+      "is_current": {
+        "type": "boolean"
+      },
+      "description": {
+        "type": "text"
+      }
+    }
+  }
+}

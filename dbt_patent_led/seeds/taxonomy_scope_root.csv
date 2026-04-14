@@ -1,15 +1,15 @@
-scope_name,scheme,root_symbol_seed,priority_tier,domain_bucket,include_descendants_flag,include_ancestors_flag,notes
-led_landscape_v1,IPC,F21S8,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,F21K9,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,H01L33,1,electronics_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,H05B33,1,electronics_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,F21V23,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,F21V21,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,F21Y103,1,indexing_core,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,G09F9,2,display_optics,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,G02F1,2,display_optics,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,IPC,B60Q1,2,application_domain,1,1,include all descendants and breadcrumb ancestors
-led_landscape_v1,CPC,F21S8,1,lighting_core,1,1,mirror CPC taxonomy where symbol exists
-led_landscape_v1,CPC,F21V23,1,lighting_core,1,1,mirror CPC taxonomy where symbol exists
-led_landscape_v1,CPC,H01L33,1,electronics_core,1,1,mirror CPC taxonomy where symbol exists
-led_landscape_v1,CPC,H05B33,1,electronics_core,1,1,mirror CPC taxonomy where symbol exists
+scope_name,scheme,root_symbol_seed,root_symbol_canonical,priority_tier,domain_bucket,include_descendants_flag,include_ancestors_flag,notes
+led_landscape_v1,IPC,F21S8,F21S8/00,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,F21K9,F21K9/00,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,H01L33,H01L33/00,1,electronics_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,H05B33,H05B33/00,1,electronics_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,F21V23,F21V23/00,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,F21V21,F21V21/00,1,lighting_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,F21Y103,F21Y103/00,1,indexing_core,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,G09F9,G09F9/00,2,display_optics,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,G02F1,G02F1/00,2,display_optics,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,IPC,B60Q1,B60Q1/00,2,application_domain,1,1,include all descendants and breadcrumb ancestors
+led_landscape_v1,CPC,F21S8,F21S8/00,1,lighting_core,1,1,mirror CPC taxonomy where symbol exists
+led_landscape_v1,CPC,F21V23,F21V23/00,1,lighting_core,1,1,mirror CPC taxonomy where symbol exists
+led_landscape_v1,CPC,H01L33,H01L33/00,1,electronics_core,1,1,mirror CPC taxonomy where symbol exists
+led_landscape_v1,CPC,H05B33,H05B33/00,1,electronics_core,1,1,mirror CPC taxonomy where symbol exists

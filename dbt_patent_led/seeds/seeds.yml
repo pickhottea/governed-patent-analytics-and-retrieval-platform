@@ -1,0 +1,19 @@
+version: 2
+
+seeds:
+  - name: cpc_title_list
+    config:
+      schema: silver
+      column_types:
+        cpc_code_raw: varchar(50)
+        hierarchy_level_raw: varchar(10)
+        title_text: nvarchar(2000)
+        source_file: varchar(255)
+
+  - name: cpc_validity
+    config:
+      schema: silver
+      column_types:
+        cpc_code: varchar(50)
+        valid_from_date: date
+        valid_to_date: date
