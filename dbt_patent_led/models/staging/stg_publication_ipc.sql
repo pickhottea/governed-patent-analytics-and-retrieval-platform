@@ -1,2 +1,2 @@
 select *
-from {{ source('patent_analytics', 'publication_ipc') }}
+from {{ source('patent_analytics', 'stg_publication_ipc') }}

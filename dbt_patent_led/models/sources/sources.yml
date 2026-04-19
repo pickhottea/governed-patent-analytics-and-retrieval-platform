@@ -8,7 +8,7 @@ sources:
       - name: rawdata_patents
       - name: ops_family_members
       - name: raw_pub_to_family_id_v2
-      - name: publication_ipc
+      - name: stg_publication_ipc
       - name: publication_abstract_dedup
       - name: publication_applicant_raw
       - name: publication_inventor_raw

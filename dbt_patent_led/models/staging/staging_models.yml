@@ -73,7 +73,19 @@ models:
 
   - name: stg_publication_ipc
     columns:
+      - name: family_id
+        tests:
+          - not_null
+
       - name: publication_number
+        tests:
+          - not_null
+
+      - name: ipc_raw_token
+        tests:
+          - not_null
+
+      - name: ipc_token_clean
         tests:
           - not_null
 
