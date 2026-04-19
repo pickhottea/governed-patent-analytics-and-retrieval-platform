@@ -96,8 +96,61 @@ models:
           - not_null
 
   - name: stg_ops_family_members
+    description: "Raw OPS family-member expansion source. Passthrough staging model; raw member publication fields are not yet canonicalized."
     columns:
-      - name: ops_family_cluster_id
+      - name: member_publication_docdb_clean
+
+      - name: member_publication_number_clean
+
+      - name: ops_family_member_key
+        tests:
+          - not_null
+          - unique
+
+      - name: ops_family_member_row_id
+        tests:
+          - not_null
+          - unique
+
+      - name: ops_family_id
+        tests:
+          - not_null
+
+      - name: seed_publication_number
+        tests:
+          - not_null
+
+      - name: seed_publication_docdb
+
+      - name: family_members_count
+        tests:
+          - not_null
+
+      - name: member_seq_within_ops_family
+        tests:
+          - not_null
+
+      - name: member_publication_docdb
+        tests:
+          - not_null
+
+      - name: member_publication_number
+        tests:
+          - not_null
+
+      - name: member_jurisdiction
+        tests:
+          - not_null
+
+      - name: member_kind
+        tests:
+          - not_null
+
+      - name: source_file_name
+        tests:
+          - not_null
+
+      - name: ingested_at
         tests:
           - not_null
 
