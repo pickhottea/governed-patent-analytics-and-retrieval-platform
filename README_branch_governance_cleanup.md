@@ -373,7 +373,125 @@ If implementation violates a sound policy, execution discipline must be correcte
 
 ---
 
-## 15. Final principle
+## 15. Known caveat — dbt `show` with SQL Server preview queries
+
+When using `dbt show` against SQL Server, avoid writing inline preview queries that use `TOP` inside the SQL body.
+
+Observed behavior:
+- `dbt run` and normal model execution succeed
+- `dbt show --inline` may fail when the inline SQL uses `TOP`
+- the failure is caused by SQL Server rejecting `TOP` together with preview-time `OFFSET` behavior in the wrapped query shape
+
+Interpretation:
+- this is a SQL Server / dbt preview-query-shape caveat
+- it does not mean the model itself failed
+- it does not mean the warehouse object is broken
+
+Practical rule:
+- for `dbt show`, prefer `--select <model> --limit <n>`
+- avoid `TOP` in inline preview SQL unless necessary
+- use direct SQL checks separately when inspecting exact query behavior
+
+---
+
+## 16. Root-cause case note — BM25 serving-lane gap closure
+
+A concrete implementation case in this branch exposed a real serving-lane gap and helped clarify where the actual authority problem was.
+
+### Observed symptom
+
+`test_serving_lane_gap` failed.
+
+At the time of investigation:
+
+- `gold.bm25_document` reflected a 150-publication serving truth
+- dbt `ref('bm25_document')` still returned 149
+- the missing publication was:
+  - `family_id = 78373363`
+  - `publication_number = WO2021220141A1`
+
+### What was initially suspected
+
+The first suspicion was that the BM25 text-construction rule was too strict:
+
+- dbt BM25 path was built from `stg_rawdata_patents`
+- it joined `stg_publication_abstract_dedup`
+- and it effectively required abstract presence to survive into the serving document
+
+That suspicion turned out to be incomplete.
+
+### Root cause found by execution
+
+The real root cause was a **source coverage gap**, not just a text-construction rule issue.
+
+The following was verified during execution:
+
+- `bridge_family_publication` contained `WO2021220141A1`
+- `stg_rawdata_patents` did **not** contain `WO2021220141A1`
+- `stg_publication_abstract_dedup` did **not** contain `WO2021220141A1`
+- `silver.publication_abstract_dedup` also did **not** contain `WO2021220141A1`
+- but `gold.bm25_document` did contain that publication
+
+This showed that the live dbt BM25 path and the warehouse BM25 serving path were not aligned.
+
+### Resolution applied
+
+A tactical source backfill was added to `silver.publication_abstract_dedup` for:
+
+- `publication_number = WO2021220141A1`
+- `family_id = 78373363`
+
+The row included:
+
+- `title_jsonl`
+- `abstract_jsonl`
+- `source_file_name = manual_backfill_WO2021220141A1_2026-04-19`
+- `ingested_at`
+
+In parallel, `models/marts/bm25_document.sql` was aligned away from the older
+`stg_rawdata_patents + abstract join` path and toward the abstract-dedup source path.
+
+### Validation result
+
+After the source row was backfilled and the dbt BM25 model was rerun:
+
+- dbt `ref('bm25_document')` returned **150**
+- `test_serving_lane_gap` passed
+
+### Interpretation
+
+This case matters because it showed that the problem was not merely:
+
+- “BM25 logic is wrong”
+- or “the test is too strict”
+
+The actual issue was:
+
+- incomplete source-path coverage
+- BM25 constructor drift between warehouse and dbt
+- reference / authority misalignment
+
+### Governance takeaway
+
+This branch should continue to treat similar failures as:
+
+**implementation completeness and authority-alignment problems first**,  
+not as reasons to immediately add more objects or remove useful singular tests.
+
+### Practical rule going forward
+
+When a serving-lane count mismatch appears:
+
+1. verify source-row existence first
+2. compare dbt live path vs warehouse serving path
+3. only then decide whether the fix belongs in:
+   - source backfill
+   - staging alignment
+   - dbt model logic
+   - or object retirement
+---
+
+## 17. Final principle
 
 This branch exists to prove governance by execution.
 

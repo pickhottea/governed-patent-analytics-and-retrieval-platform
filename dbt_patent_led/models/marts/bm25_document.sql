@@ -1,11 +1,11 @@
 select
-    r.family_id,
-    r.publication_number,
-    r.title,
+    a.family_id,
+    a.publication_number,
+    a.title_jsonl as title,
     a.abstract_jsonl as abstract_text,
     ltrim(rtrim(
         concat(
-            coalesce(r.title, ''),
+            coalesce(a.title_jsonl, ''),
             case
                 when a.abstract_jsonl is not null and ltrim(rtrim(a.abstract_jsonl)) <> ''
                     then ' ' + a.abstract_jsonl
@@ -13,9 +13,15 @@ select
             end
         )
     )) as bm25_text
-from {{ ref('stg_rawdata_patents') }} r
-left join {{ ref('stg_publication_abstract_dedup') }} a
-    on r.publication_number = a.publication_number
-where r.publication_number is not null
-  and a.abstract_jsonl is not null
-  and ltrim(rtrim(a.abstract_jsonl)) <> ''
+from {{ ref('stg_publication_abstract_dedup') }} a
+where a.publication_number is not null
+  and ltrim(rtrim(
+        concat(
+            coalesce(a.title_jsonl, ''),
+            case
+                when a.abstract_jsonl is not null and ltrim(rtrim(a.abstract_jsonl)) <> ''
+                    then ' ' + a.abstract_jsonl
+                else ''
+            end
+        )
+    )) <> ''
