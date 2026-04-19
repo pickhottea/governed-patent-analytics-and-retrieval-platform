@@ -106,14 +106,38 @@ This registry pins a single authoritative owner for major objects appearing in:
 | `models/marts/mart_family_publication_coverage.sql` | family-publication coverage mart | derived mart | `[DERIVED]` | Keep; explicit Power BI-facing mart. |
 
 ---
+## Implementation finding — BM25 authority closure
+
+A concrete implementation case showed that the earlier BM25 count mismatch was not caused primarily by BM25 text-construction logic.
+
+The missing publication was:
+
+- `publication_number = WO2021220141A1`
+- `family_id = 78373363`
+
+Verified during implementation:
+- `bridge_family_publication` contained the publication
+- `stg_rawdata_patents` did not contain it
+- `stg_publication_abstract_dedup` did not contain it
+- `silver.publication_abstract_dedup` also did not contain it
+- but `gold.bm25_document` did contain it
+
+A tactical backfill was added to the abstract/title source path.
+After rerun:
+- dbt `ref('bm25_document')` returned 150
+- `test_serving_lane_gap` passed
+
+Interpretation:
+- the practical root cause was a **missing source row**, plus constructor-path misalignment
+- the main remaining BM25 simplification question is now mirror retirement and deploy ownership
 
 ## D. BM25 path
 
 | Object | Current role | Unique authoritative owner | Status | Notes |
 |---|---|---|---|---|
-| `models/marts/bm25_document.sql` | dbt BM25 model definition | unresolved until BM25 authority decision is closed | `[HOLD]` | Current live dbt path still yields 149. Do not retire yet. |
-| `gold.bm25_document` | intended BM25 serving table / ES source | gold serving table (provisionally preferred) | `[AUTHORITATIVE]` | Current serving flow maps through gold BM25 path. |
-| `dbo.bm25_document` | BM25 mirror/drifted view | unresolved until BM25 authority cleanup is complete | `[HOLD]` | Known drift: 149 vs 150. Do not retire yet. |
+| `models/marts/bm25_document.sql` | dbt BM25 model definition | dbt model source-of-build | `[AUTHORITATIVE]` | Active dbt BM25 path now returns 150 after abstract-path backfill and model alignment. |
+| `gold.bm25_document` | intended BM25 serving table / ES source | gold serving table | `[AUTHORITATIVE]` | Current serving path is reconciled to 150 and remains the preferred warehouse serving artifact. |
+| `dbo.bm25_document` | BM25 mirror view | `gold.bm25_document` / dbt BM25 path | `[MIRROR]` | The count gap is closed. Remaining action is consumer audit and later retirement decision. |
 | `models/marts/mart_bm25_publication_metadata.sql` | BM25 hydration metadata mart | dbt model source-of-build | `[AUTHORITATIVE]` | Keep as presentation metadata source for now. |
 | `gold.v_bm25_publication_metadata` | BM25 hydrated result view | gold lookup/presentation view | `[DERIVED]` | Keep; may later be consolidated with dbt-side metadata if duplicate path persists. |
 | `sql/gold/bm25_document.sql` | warehouse build script | unresolved until bm25 authority is frozen | `[HOLD]` | Do not retire before confirming deployment path. |
@@ -204,7 +228,7 @@ Retire in this order:
 1. archived loaders / duplicate stray docs
 2. clearly deprecated legacy objects with no remaining downstream dependency
 3. mirror `dbo.*` paths only after all consuming code and dashboards are confirmed to point at `gold.*`
-4. BM25 duplicate path only after BM25 authority drift is closed
+4. BM25 mirror retirement only after consumer audit and deploy ownership freeze, now that the count-gap closure is complete
 
 ## Final note
 

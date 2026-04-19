@@ -47,15 +47,16 @@ This document records the **typical patterns discovered during the POLICY implem
 → `stg_publication_abstract_dedup`  
 
 `models/marts/bm25_document.sql`  
-→ `dbo.bm25_document` (current live dbt result, 149)  
-→ `gold.bm25_document` (intended serving truth candidate, 150)  
+→ `dbo.bm25_document` (current live dbt result, 150 after source-row backfill and model alignment)  
+→ `gold.bm25_document` (serving truth candidate, 150)  
 → `search/elasticsearch/create_patent_bm25_index.py`  
 → `search/elasticsearch/load_bm25_document.py`  
 → Elasticsearch index  
 → Streamlit BM25 tab  
 → `gold.v_bm25_publication_metadata` / hydration layer
 
-**Known drift:** `dbo.bm25_document` and `gold.bm25_document` currently disagree.
+**Current status:** the earlier 149-vs-150 BM25 serving-lane gap is now closed.  
+The practical root cause was a missing source row in the abstract/title path for `WO2021220141A1`, not BM25 text-construction logic alone.
 
 ## 1.2 Family / publication core lane
 
@@ -183,7 +184,8 @@ dbt test --select stg_publication_ipc
   - `ipc_raw_token`
   - `ipc_token_clean`
 
-## 2.3 BM25 authority drift check
+
+## 2.3 BM25 serving-gap investigation and closure
 
 ```bash
 cd ~/project3/patent_led_governance/dbt_patent_led
@@ -200,15 +202,53 @@ from gold.bm25_document
 "
 
 dbt show --inline "
-select count(distinct publication_number) as publication_count
-from dbo.bm25_document
+with gold_set as (
+    select distinct publication_number
+    from gold.bm25_document
+),
+dbt_set as (
+    select distinct publication_number
+    from {{ ref('bm25_document') }}
+)
+select
+    g.publication_number
+from gold_set g
+left join dbt_set d
+    on g.publication_number = d.publication_number
+where d.publication_number is null
 "
+
 ```
 
-**Observed:**
-- `ref('bm25_document')` = 149
-- `gold.bm25_document` = 150
-- `dbo.bm25_document` = 149
+
+**Observed during investigation:**
+
+- dbt `ref('bm25_document')` initially returned **149**
+- `gold.bm25_document` returned **150**
+- the missing publication was `WO2021220141A1`
+
+Further verification showed:
+
+- `bridge_family_publication` contained `WO2021220141A1`
+- `stg_rawdata_patents` did **not** contain it
+- `stg_publication_abstract_dedup` did **not** contain it
+- `silver.publication_abstract_dedup` also did **not** contain it
+- but `gold.bm25_document` did contain it
+
+A tactical source backfill was then added for:
+
+- `publication_number = WO2021220141A1`
+- `family_id = 78373363`
+
+After rerun:
+
+- dbt `ref('bm25_document')` returned **150**
+- `test_serving_lane_gap` passed
+
+**Findings:**
+
+The practical root cause was a **missing source row in the abstract/title path**, combined with constructor-path misalignment between dbt BM25 and the warehouse serving path.
+
 
 ## 2.4 Known dbt/SQL Server preview caveat
 
@@ -220,10 +260,10 @@ from dbo.bm25_document
 
 | Functional group | Object | Type / location | Provided function | Tag | Reason | Consolidation conditions | Retirement conditions (any one is enough) | Touch timing / trigger |
 |---|---|---|---|---|---|---|---|---|
-| BM25 | `models/marts/bm25_document.sql` | dbt model | Builds publication-grain BM25 text from title + abstract | [HOLD] | Live dbt BM25 path still resolves to the 149-state result | — | — | Touch only after BM25 authority is fixed and the missing-publication root cause is documented |
+| BM25 | `models/marts/bm25_document.sql` | dbt model | Builds publication-grain BM25 text from title + abstract | [KEEP] | Active dbt BM25 constructor is now aligned with the abstract-dedup path and returns 150 after source-row backfill | — | — | — |
 | BM25 | `gold.bm25_document` | warehouse table | Intended BM25 serving truth / Elasticsearch source | [KEEP] | Core BM25 serving artifact | — | — | — |
-| BM25 | `dbo.bm25_document` | warehouse view | Legacy / alternate BM25 serving path; current drift source | [HOLD] | Still part of the live mismatch with `gold.bm25_document` | — | — | Touch only after consumer inventory and dbt authority are both resolved |
-| BM25 | `sql/gold/bm25_document.sql` | raw SQL build script | Direct warehouse build path for BM25 object | [RETIRE-CANDIDATE] | Likely duplicates dbt ownership if dbt becomes the only builder | — | dbt is sole deploy path; no manual deployment still uses this file; replacement is documented | After BM25 deploy ownership is frozen |
+| BM25 | `dbo.bm25_document` | warehouse view | BM25 mirror / alternate serving path | [HOLD] | The earlier count gap is now closed, but this object still requires final consumer audit before retirement | — | — | Touch only after consumer inventory and repoint plan are completed |
+| BM25 | `sql/gold/bm25_document.sql` | raw SQL build script | Direct warehouse build path for BM25 object | [RETIRE-CANDIDATE] | Still useful as evidence of the earlier warehouse serving path, but likely redundant once deploy ownership is frozen | — | dbt is sole deploy path; no manual deployment still uses this file; BM25 deploy ownership is explicitly documented | After BM25 deploy ownership is frozen |
 | BM25 | `models/marts/mart_bm25_publication_metadata.sql` | dbt mart | Hydration metadata for BM25 result cards | [CONSOLIDATE] | Useful function, but may be overexposed as a separate mart if one presentation path is enough | same fields already exist in `gold.v_bm25_publication_metadata`; only one stable hydration layer is needed; consumer can be repointed cleanly | — | After BM25 authority is frozen |
 | BM25 | `gold.v_bm25_publication_metadata` | warehouse view | Presentation/hydration view for BM25 results | [CONSOLIDATE] | Presentation layer is useful, but should not coexist with too many equivalent shapes | fields match the dbt metadata mart; Streamlit only needs one stable presentation object; no separate SLA exists | — | After BM25 presentation consumers are inventoried |
 | Family / publication | `models/marts/bridge_family_ops_cluster.sql` | dbt model | Maps governed family identity to OPS cluster identity | [KEEP] | Core family expansion bridge | — | — | — |
@@ -352,12 +392,14 @@ Highest-confidence retirement candidates:
 - `sql/archive/gold_loaders/*`
 - duplicate `sql/gold/*.sql` object builders **after** dbt build ownership is frozen per object
 
+`dbo.bm25_document` remains a next-wave mirror retirement candidate, but no longer because of an unresolved 149-vs-150 mismatch. The current blocker is consumer inventory and repoint planning.
+
+
 ## 4.4 Hold zone
 
 Do not touch these casually:
 
 - `dbo.bm25_document`
-- `models/marts/bm25_document.sql`
 - `stg_rawdata_patents_effective`
 - `stg_rawdata_patents_backfill_gap`
 - most `dbo.*` mirror views

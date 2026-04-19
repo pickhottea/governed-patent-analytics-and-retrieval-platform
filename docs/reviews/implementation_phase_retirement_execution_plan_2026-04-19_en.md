@@ -11,6 +11,19 @@ When a project becomes large, supports multiple execution phases, and relies on 
 
 This execution plan records the **retirement and simplification actions discovered during the POLICY implementation phase**. It should be updated continuously until the POLICY execution phase is complete, while tracking every file, table, view, or SQL script that should be deleted first, deleted later, kept forever, or held until a clear authority decision exists.
 
+## Updated finding after BM25 gap closure
+
+The earlier BM25 149-vs-150 mismatch was resolved during implementation.
+
+What changed:
+- the missing publication was identified as `WO2021220141A1`
+- the practical root cause was a missing source row in the abstract/title path
+- after manual backfill and rerun, dbt `ref('bm25_document')` returned 150
+- `test_serving_lane_gap` passed
+
+This means BM25 is no longer the primary unresolved count-mismatch story in this branch.
+The remaining BM25 question is now **mirror retirement and deploy ownership**, not count reconciliation.
+
 ## Tag legend
 
 - **[DELETE-WAVE-1]** — high-confidence first-wave deletion / retirement target
@@ -48,7 +61,7 @@ Delete Wave 1 should only be blocked if a real restore workflow still depends on
 
 | Object | Type / location | Why it should go later | Finite blocker | Tag |
 |---|---|---|---|---|
-| `dbo.bm25_document` | warehouse view | Drift source versus `gold.bm25_document`; currently part of the 149/150 mismatch story | BM25 authority decision + consumer repoint plan | [DELETE-WAVE-2] |
+| `dbo.bm25_document` | warehouse view | BM25 mirror candidate after count-gap closure; no longer blocked by the old 149/150 mismatch itself | consumer inventory + repoint plan + final deploy ownership decision | [DELETE-WAVE-2] |
 | `sql/gold/bm25_document.sql` | raw SQL build script | Likely duplicate deploy path if dbt or gold becomes authoritative | BM25 build ownership must be frozen | [DELETE-WAVE-2] |
 | `dbo.bridge_family_publication` | warehouse mirror view | Strong mirror candidate if `gold.bridge_family_publication` is authoritative | Consumer inventory + repoint plan | [DELETE-WAVE-2] |
 | `dbo.bridge_publication_ipc` | warehouse mirror view | Strong mirror candidate if gold/dbt path is authoritative | Consumer inventory + repoint plan | [DELETE-WAVE-2] |
@@ -102,7 +115,6 @@ Delete Wave 1 should only be blocked if a real restore workflow still depends on
 
 | Object | Why not now | Touch timing / exact trigger | Tag |
 |---|---|---|---|
-| `models/marts/bm25_document.sql` | Live dbt BM25 path still returns 149 and is part of the unresolved authority story | Touch after BM25 authority is decided and the missing-publication root cause is written down | [HOLD-UNTIL] |
 | `stg_rawdata_patents_effective` | Intermediate helper may still support publication-version path | Touch after full dependency map for `dim_publication` is documented | [HOLD-UNTIL] |
 | `stg_rawdata_patents_backfill_gap` | Likely incident/gap helper | Touch after date/version path is frozen and no backfill recovery workflow depends on it | [HOLD-UNTIL] |
 | `gold.ipc_description_reference` / `gold.cpc_description_reference` | Lookup/reference semantics may still be consumed | Touch after lookup dependency map is documented | [HOLD-UNTIL] |
@@ -146,6 +158,18 @@ Retire Wave 1 candidates first.
 
 ## Step 2
 Freeze per-object build ownership for BM25, family/publication core, and IPC core.
+
+## Implementation-completeness blocker still open
+
+IPC retirement should not be advanced yet based on the current `mart_publication_ipc_expanded` error.
+
+Reason:
+- the current failure indicates that `mart_publication_ipc_expanded` is not present as an active runtime object in the current path
+- this is an implementation-completeness problem, not a retirement signal
+
+Practical rule:
+- finish or materialize the active IPC mart path first
+- only then continue mirror retirement decisions for IPC-related objects
 
 ## Step 3
 Inventory consumers of `dbo.*` mirror views.
