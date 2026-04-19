@@ -1,6 +1,58 @@
 version: 2
 
 models:
+  - name: bridge_family_publication
+    description: "Normalized family-to-publication bridge. 1 row = 1 family_id x 1 publication_number."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: publication_number
+        tests:
+          - not_null
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - family_id
+              - publication_number
+
+  - name: bridge_family_ops_cluster
+    description: "Bridge between governed family_id and OPS family cluster identifier."
+    columns:
+      - name: family_id
+        tests:
+          - not_null
+
+      - name: ops_family_cluster_id
+        tests:
+          - not_null
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - family_id
+              - ops_family_cluster_id
+
+  - name: bm25_document
+    description: "Publication-grain BM25 serving source."
+    columns:
+      - name: publication_number
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('bridge_family_publication')
+                field: publication_number
+
+      - name: family_id
+        tests:
+          - not_null
+
   - name: taxonomy_symbol
     description: "Canonical IPC/CPC taxonomy symbol registry built from official scheme files. 1 row = 1 scheme x 1 version_tag x 1 symbol_canonical."
     columns:
@@ -245,6 +297,13 @@ models:
               arguments:
                 to: ref('dim_ipc')
                 field: ipc_code
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - publication_number
+              - ipc_code
 
   - name: dim_ipc
     description: "Canonical IPC dimension. 1 row = 1 ipc_code."
