@@ -132,9 +132,35 @@ cleaned as (
         title,
         inventors,
         applicants,
+
         try_convert(date, priority_date_raw) as priority_date,
         try_convert(date, application_date_raw) as application_date,
-        try_convert(date, publication_date_raw) as publication_date,
+
+        ltrim(rtrim(
+            case
+                when charindex(char(10), replace(cast(publication_date_raw as varchar(4000)), char(13), char(10))) > 0
+                    then left(
+                        replace(cast(publication_date_raw as varchar(4000)), char(13), char(10)),
+                        charindex(char(10), replace(cast(publication_date_raw as varchar(4000)), char(13), char(10))) - 1
+                    )
+                else cast(publication_date_raw as varchar(4000))
+            end
+        )) as publication_date_first_line_raw,
+
+        try_convert(
+            date,
+            ltrim(rtrim(
+                case
+                    when charindex(char(10), replace(cast(publication_date_raw as varchar(4000)), char(13), char(10))) > 0
+                        then left(
+                            replace(cast(publication_date_raw as varchar(4000)), char(13), char(10)),
+                            charindex(char(10), replace(cast(publication_date_raw as varchar(4000)), char(13), char(10))) - 1
+                        )
+                    else cast(publication_date_raw as varchar(4000))
+                end
+            ))
+        ) as publication_date,
+
         source_file_name,
         ingested_at,
         row_id,
