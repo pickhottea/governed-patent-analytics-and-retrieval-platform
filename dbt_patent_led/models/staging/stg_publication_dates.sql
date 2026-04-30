@@ -24,7 +24,7 @@ with src as (
         ingested_at,
         row_id,
         json_payload
-    from {{ ref('stg_rawdata_patents_effective') }}
+    from {{ ref('stg_rawdata_patents') }}
 
 ),
 

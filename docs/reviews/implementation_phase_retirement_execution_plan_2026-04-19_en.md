@@ -4,6 +4,7 @@
 **Worktree:** `~/project3/patent_led_governance`  
 **Branch:** `feature/tests-checks-boundary-cleanup`  
 **Date:** 2026-04-19
+**Last updated:** 2026-04-30
 
 ## Opening memo
 
@@ -23,6 +24,37 @@ What changed:
 
 This means BM25 is no longer the primary unresolved count-mismatch story in this branch.
 The remaining BM25 question is now **mirror retirement and deploy ownership**, not count reconciliation.
+
+## Updated finding after publication metadata shell-backfill review
+
+A later implementation review showed that the publication metadata lane had been appearing more complete than it really was.
+
+The key example was `WO2021220141A1`:
+
+- it existed in `bridge_family_publication`
+- it existed in `stg_raw_pub_to_family_id_v2`
+- it also existed in `stg_ops_family_members_canonical`
+- but it did not exist as a real publication-metadata row in `stg_rawdata_patents`
+
+This means family/publication identity coverage existed, while publication-level metadata coverage did not.
+
+The previous shell-based path:
+
+- `models/intermediate/stg_rawdata_patents_backfill_gap.sql`
+- `models/intermediate/stg_rawdata_patents_effective.sql`
+
+created fallback rows that preserved existence only, while leaving core metadata null.
+
+After restoring `stg_publication_dates` to read directly from `stg_rawdata_patents`, the publication-date lane stabilized at:
+
+- 149 total rows
+- 149 rows with non-null `publication_date`
+- 149 rows with `date_quality_status = ok`
+
+Decision:
+- shell-based publication backfill is no longer acceptable for the governed publication metadata lane
+- missing publication metadata must be recovered from the real upstream source
+- if needed, the project should re-pull the missing publication from EPO rather than maintain downstream shell rows
 
 ## Tag legend
 
@@ -51,6 +83,8 @@ The remaining BM25 question is now **mirror retirement and deploy ownership**, n
 | `sql/archive/gold_loaders/load_bridge_publication_inventor_raw.sql` | archived loader SQL | Historical loader kept only for traceability | Yes | [DELETE-WAVE-1] |
 | `sql/archive/gold_loaders/load_fact_publication_applicant.sql` | archived loader SQL | Historical loader kept only for traceability | Yes | [DELETE-WAVE-1] |
 | `sql/archive/gold_loaders/load_fact_publication_inventor.sql` | archived loader SQL | Historical loader kept only for traceability | Yes | [DELETE-WAVE-1] |
+| `models/intermediate/stg_rawdata_patents_backfill_gap.sql` | dbt intermediate helper | Shell-only reaction measure; preserved existence without publication metadata and created false completeness in downstream publication lanes | Yes | [DELETE-WAVE-1] |
+| `models/intermediate/stg_rawdata_patents_effective.sql` | dbt intermediate helper | Existed only to union authoritative publication rows with shell-based fallback rows; loses purpose once shell backfill is retired | Yes | [DELETE-WAVE-1] |
 
 **Wave-1 execution note:**
 Delete Wave 1 should only be blocked if a real restore workflow still depends on these files. If no one can name that restore workflow, delete them from active use and mark them retired.
@@ -115,8 +149,6 @@ Delete Wave 1 should only be blocked if a real restore workflow still depends on
 
 | Object | Why not now | Touch timing / exact trigger | Tag |
 |---|---|---|---|
-| `stg_rawdata_patents_effective` | Intermediate helper may still support publication-version path | Touch after full dependency map for `dim_publication` is documented | [HOLD-UNTIL] |
-| `stg_rawdata_patents_backfill_gap` | Likely incident/gap helper | Touch after date/version path is frozen and no backfill recovery workflow depends on it | [HOLD-UNTIL] |
 | `gold.ipc_description_reference` / `gold.cpc_description_reference` | Lookup/reference semantics may still be consumed | Touch after lookup dependency map is documented | [HOLD-UNTIL] |
 | `silver.rawdata_patents` / `sql/silver/rawdata_patents.sql` | Still part of active source registry | Touch after source registry freeze | [HOLD-UNTIL] |
 | `silver.publication_applicant_raw`, `silver.publication_inventor_raw`, `silver.stg_*` mirrors | Mirror authority still ambiguous | Touch after applicant/inventor source registry freeze | [HOLD-UNTIL] |

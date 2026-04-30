@@ -5,6 +5,8 @@
 **Branch:** `feature/tests-checks-boundary-cleanup`  
 **Status:** Working memo for the POLICY implementation phase  
 **Date:** 2026-04-19
+**Last updated:** 2026-04-30
+
 
 ## Opening memo
 
@@ -256,6 +258,53 @@ The practical root cause was a **missing source row in the abstract/title path**
 
 ---
 
+## 2.5 Publication metadata lane false-completeness finding
+
+A focused implementation review around `WO2021220141A1` showed that the remaining publication-date gap was not caused by date parsing alone.
+
+Verified during review:
+
+- `bridge_family_publication` contained `WO2021220141A1`
+- `stg_raw_pub_to_family_id_v2` contained `WO2021220141A1`
+- `stg_ops_family_members_canonical` also resolved `WO2021220141A1`
+- but `stg_rawdata_patents` did not contain a real publication-metadata row for it
+
+This proved that family/publication identity coverage existed, while publication-level metadata coverage did not.
+
+The previous `stg_rawdata_patents_backfill_gap` and `stg_rawdata_patents_effective` path created a shell-based fallback row that preserved existence only, not real publication metadata. That shell path could carry:
+
+- `family_id`
+- `publication_number`
+
+but still left core publication metadata null, including:
+
+- `publication_date`
+- `grant_number`
+- `title`
+- `inventors`
+- `applicants`
+
+After restoring `stg_publication_dates` to read directly from `stg_rawdata_patents`, the date lane stabilized at:
+
+- 149 total rows
+- 149 rows with non-null `publication_date`
+- 149 rows with `date_quality_status = ok`
+
+Interpretation:
+
+- the earlier 150-row appearance in this lane was false completeness
+- the real problem is upstream publication-metadata coverage
+- shell-based reaction measures are not acceptable as a long-term solution for the governed publication metadata lane
+
+Decision:
+
+- keep the authoritative raw publication metadata lane
+- keep OPS member canonicalization for identity cleanup
+- retire shell-based publication backfill from this lane
+- recover missing publication metadata from the real upstream source (for example, by re-pulling from EPO), rather than fabricating downstream shell rows
+
+---
+
 # 3. Master object review table
 
 | Functional group | Object | Type / location | Provided function | Tag | Reason | Consolidation conditions | Retirement conditions (any one is enough) | Touch timing / trigger |
@@ -273,8 +322,8 @@ The practical root cause was a **missing source row in the abstract/title path**
 | Family / publication | `models/staging/stg_raw_pub_to_family_id_v2.sql` | dbt staging | Publication-to-family staging mirror | [KEEP] | Required source for family/publication bridge | — | — | — |
 | Family / publication | `models/staging/stg_ops_family_members.sql` | dbt staging | Raw OPS family-member expansion staging | [KEEP] | Explicit raw area with useful dirt-exposure tests | — | — | — |
 | Family / publication | `models/intermediate/stg_ops_family_members_canonical.sql` | dbt intermediate | Canonicalized helper for OPS family members | [CONSOLIDATE] | Helper is valid, but should not automatically become another permanent public lane | same canonical fields can live in one stable staging path; no external consumer reads it directly; raw/clean boundary remains explicit | — | After OPS raw/clean contract is frozen |
-| Family / publication | `models/intermediate/stg_rawdata_patents_effective.sql` | dbt intermediate | Effective/rawdata helper for publication path | [HOLD] | May still support publication version path or gap handling | — | — | Touch only after full dependency map for `dim_publication` is written |
-| Family / publication | `models/intermediate/stg_rawdata_patents_backfill_gap.sql` | dbt intermediate | Backfill-gap helper | [HOLD] | Likely incident/gap handling logic, not safe for casual deletion | — | — | Touch only after publication-version and date paths are frozen |
+| Family / publication | `models/intermediate/stg_rawdata_patents_effective.sql` | dbt intermediate | Shell-plus-authoritative consolidation helper for publication rows | [RETIRE-CANDIDATE] | Created a false-completeness path by unioning real publication rows with shell-only fallback rows; no longer acceptable for the governed publication metadata lane | — | `stg_publication_dates` and downstream publication-metadata checks are stable on the authoritative raw path alone; no active downstream dependency remains on shell-union behavior | Now |
+| Family / publication | `models/intermediate/stg_rawdata_patents_backfill_gap.sql` | dbt intermediate | Shell-only coverage rescue for missing publication rows | [RETIRE-CANDIDATE] | Preserved existence without real publication metadata and masked upstream source incompleteness | — | authoritative publication lane is restored; missing publication rows must be recovered from upstream source rather than fabricated downstream | Now |
 | Applicant / inventor | `models/staging/stg_publication_applicant_raw.sql` | dbt staging | Applicant raw staging | [KEEP] | Required staging for applicant facts | — | — | — |
 | Applicant / inventor | `models/staging/stg_publication_inventor_raw.sql` | dbt staging | Inventor raw staging | [KEEP] | Required staging for inventor facts | — | — | — |
 | Applicant / inventor | `models/marts/fact_publication_applicant.sql` | dbt model | Publication-applicant long-table fact | [KEEP] | Canonical long-table fact | — | — | — |
@@ -392,7 +441,10 @@ Highest-confidence retirement candidates:
 - `sql/archive/gold_loaders/*`
 - duplicate `sql/gold/*.sql` object builders **after** dbt build ownership is frozen per object
 
-`dbo.bm25_document` remains a next-wave mirror retirement candidate, but no longer because of an unresolved 149-vs-150 mismatch. The current blocker is consumer inventory and repoint planning.
+- `dbo.bm25_document` remains a next-wave mirror retirement candidate, but no longer because of an unresolved 149-vs-150 mismatch. The current blocker is consumer inventory and repoint planning.
+
+- `models/intermediate/stg_rawdata_patents_backfill_gap.sql`
+- `models/intermediate/stg_rawdata_patents_effective.sql`
 
 
 ## 4.4 Hold zone
@@ -400,8 +452,6 @@ Highest-confidence retirement candidates:
 Do not touch these casually:
 
 - `dbo.bm25_document`
-- `stg_rawdata_patents_effective`
-- `stg_rawdata_patents_backfill_gap`
 - most `dbo.*` mirror views
 - specialized serving/queue SQL
 
